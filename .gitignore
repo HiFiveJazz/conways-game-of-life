@@ -1,0 +1,13 @@
+# Compiled output
+/target/
+
+# Rust/Cargo lockfile (optional, see below)
+Cargo.lock
+
+# Backup files
+**/*.rs.bk
+
+
+# OS junk
+.DS_Store
+Thumbs.db
