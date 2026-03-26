@@ -94,9 +94,42 @@ fn draw_block(coords: &[(u16, u16)]) {
 }
 
 fn check_neighbors(coords: &[(u16,u16)]) -> std::vec::Vec<(u16,u16)>{
+    let mut neighbor_stack: Vec<(u16, u16)> = Vec::new(); // neighbors of the live cells this frame
     let mut next_coordinate_stack: Vec<(u16, u16)> = Vec::new(); // live cells for next frame
 	for this_coord in coords {
 		let mut live_neighbor:u8 = 0;
+		// ---
+		// oX-
+		// ---
+		neighbor_stack.push((this_coord.0 - 1, this_coord.1));
+		// o--
+		// -X-
+		// ---
+		neighbor_stack.push((this_coord.0 - 1, this_coord.1 + 1));
+		// -o-
+		// -X-
+		// ---
+		neighbor_stack.push((this_coord.0, this_coord.1 + 1));
+		// --o
+		// -X-
+		// ---
+		neighbor_stack.push((this_coord.0 + 1, this_coord.1 + 1));
+		// ---
+		// -Xo
+		// ---
+		neighbor_stack.push((this_coord.0 + 1, this_coord.1));
+		// ---
+		// -X-
+		// --o
+		neighbor_stack.push((this_coord.0 + 1, this_coord.1 - 1));
+		// ---
+		// -X-
+		// -o-
+		neighbor_stack.push((this_coord.0, this_coord.1 - 1));
+		// ---
+		// -X-
+		// o--
+		neighbor_stack.push((this_coord.0 - 1, this_coord.1 - 1));
 		for all_coord in coords {
 			// ---
 			// oX-
@@ -159,9 +192,65 @@ fn check_neighbors(coords: &[(u16,u16)]) -> std::vec::Vec<(u16,u16)>{
 		// if live_neighbor == 2 || live_neighbor == 3 {
 		// 	next_coordinate_stack.push((this_coord.1, this_coord.0));
 		// }
-		// Dead cells with exactly 3 neighbors become live
 	}
-	return next_coordinate_stack
+	for neighbor_coords in neighbor_stack {
+		let mut live_neighbor:u8 = 0;
+		// ---
+		// oX-
+		// ---
+		for all_coord in coords {
+			if (neighbor_coords.1  == all_coord.1 - 1 && neighbor_coords.0 == all_coord.0 ) {
+				live_neighbor+=1;
+			}
+			// o--
+			// -X-
+			// ---
+			if (neighbor_coords.1  == all_coord.1 - 1 && neighbor_coords.0 == all_coord.0 + 1) {
+				live_neighbor+=1;
+			}
+			// -o-
+			// -X-
+			// ---
+			if (neighbor_coords.1  == all_coord.1 && neighbor_coords.0 == all_coord.0 + 1) {
+				live_neighbor+=1;
+			}
+			// --o
+			// -X-
+			// ---
+			if (neighbor_coords.1  == all_coord.1 + 1 && neighbor_coords.0 == all_coord.0 + 1) {
+				live_neighbor+=1;
+			}
+			// ---
+			// -Xo
+			// ---
+			if (neighbor_coords.1  == all_coord.1 + 1 && neighbor_coords.0 == all_coord.0) {
+				live_neighbor+=1;
+			}
+			// ---
+			// -X-
+			// --o
+			if (neighbor_coords.1  == all_coord.1 + 1 && neighbor_coords.0 == all_coord.0 - 1) {
+				live_neighbor+=1;
+			}
+			// ---
+			// -X-
+			// -o-
+			if (neighbor_coords.1  == all_coord.1 && neighbor_coords.0 == all_coord.0 - 1) {
+				live_neighbor+=1;
+			}
+			// ---
+			// -X-
+			// o--
+			if (neighbor_coords.1  == all_coord.1 - 1 && neighbor_coords.0 == all_coord.0 - 1) {
+				live_neighbor+=1;
+			}
+		}
+		// Dead cells with exactly 3 neighbors become live
+		if live_neighbor == 3 {
+			next_coordinate_stack.push((neighbor_coords.0, neighbor_coords.1));
+		}
+	}
+	next_coordinate_stack
 }
 
 fn main() {
