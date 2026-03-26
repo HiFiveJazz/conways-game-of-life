@@ -185,8 +185,12 @@ fn check_neighbors(coords: &[(u16,u16)]) -> std::vec::Vec<(u16,u16)>{
 
 		// }
 		// Live cells with 2 or 3 neighbors live
-		if live_neighbor == 2 || live_neighbor == 3 {
-			next_coordinate_stack.push((this_coord.0, this_coord.1));
+		let cell = (this_coord.0, this_coord.1);
+
+		if (live_neighbor == 2 || live_neighbor == 3)
+		    && !next_coordinate_stack.contains(&cell)
+		{
+		    next_coordinate_stack.push(cell);
 		}
 		// Live cells with > 3 neighbors die
 		// if live_neighbor == 2 || live_neighbor == 3 {
@@ -195,10 +199,17 @@ fn check_neighbors(coords: &[(u16,u16)]) -> std::vec::Vec<(u16,u16)>{
 	}
 	for neighbor_coords in neighbor_stack {
 		let mut live_neighbor:u8 = 0;
+		let mut already_alive = false;
 		// ---
 		// oX-
 		// ---
 		for all_coord in coords {
+			if (neighbor_coords.0 == all_coord.0 && neighbor_coords.1 == all_coord.1 ) {
+				already_alive = true;
+				break;
+			}
+
+
 			if (neighbor_coords.1  == all_coord.1 - 1 && neighbor_coords.0 == all_coord.0 ) {
 				live_neighbor+=1;
 			}
@@ -246,8 +257,10 @@ fn check_neighbors(coords: &[(u16,u16)]) -> std::vec::Vec<(u16,u16)>{
 			}
 		}
 		// Dead cells with exactly 3 neighbors become live
-		if live_neighbor == 3 {
-			next_coordinate_stack.push((neighbor_coords.0, neighbor_coords.1));
+		if !already_alive && live_neighbor == 3 {
+		    if !next_coordinate_stack.contains(&neighbor_coords) {
+			next_coordinate_stack.push(neighbor_coords);
+		    }
 		}
 	}
 	next_coordinate_stack
@@ -259,14 +272,34 @@ fn main() {
         terminal_size().expect("Could not get terminal size");
     let x = terminal_cols / 2;
     let y = terminal_rows / 2;
-    let mut coordinate_stack: Vec<(u16, u16)> = vec![(x,y), (x+1,y), (x-1,y)];
+    // let mut coordinate_stack: Vec<(u16, u16)> = vec![(x,y), (x+1,y), (x+1,y+1), (x, y+1)];
+    // let mut coordinate_stack: Vec<(u16, u16)> = vec![(x-1,y), (x,y), (x+1,y)]; 
+//     let mut coordinate_stack: Vec<(u16, u16)> = vec![
+//     (x, y),
+//     (x+1, y-1),
+//     (x+2, y-1),
+//     (x+3, y),
+//     (x+1, y+1),
+//     (x+2, y+1),
+// ];
+
+    let mut coordinate_stack: Vec<(u16, u16)> = 
+vec![
+    (x, y),
+    (x+1, y),
+    (x+2, y),
+    (x-1, y+1),
+    (x, y+1),
+    (x+1, y+1),
+];
+
     initial_runtime();
     loop {
         clear_screen();
 	draw_block(&coordinate_stack);
 	coordinate_stack = check_neighbors(&coordinate_stack);
         io::stdout().flush().unwrap();
-        thread::sleep(time::Duration::from_millis(1000));
+        thread::sleep(time::Duration::from_millis(200));
     }
 
     #[allow(unreachable_code)]
