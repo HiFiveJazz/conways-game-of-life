@@ -1,4 +1,4 @@
-use std::{thread, time};
+use std::{thread, time, vec};
 use std::mem;
 use std::os::unix::io::AsRawFd;
 use std::io::{self, Write};
@@ -77,29 +77,107 @@ fn terminal_size() -> Option<(u16, u16)> {
     }
 }
 
+fn initial_runtime() {
+    print!("\x1B[?25l"); // hide cursor
+}
+
+
+
 fn clear_screen() {
     print!("\x1B[2J\x1B[H");
 }
 
-fn draw_block(x: u16, y: u16) {
-    print!("\x1B[{};{}H■", y, x);
+fn draw_block(coords: &[(u16, u16)]) {
+	for coord in coords {
+		print!("\x1B[{};{}H■", coord.1, coord.0);
+	}
+}
+
+fn check_neighbors(coords: &[(u16,u16)]) -> std::vec::Vec<(u16,u16)>{
+    let mut next_coordinate_stack: Vec<(u16, u16)> = Vec::new(); // live cells for next frame
+	for this_coord in coords {
+		let mut live_neighbor:u8 = 0;
+		for all_coord in coords {
+			// ---
+			// oX-
+			// ---
+			if (this_coord.1  == all_coord.1 - 1 && this_coord.0 == all_coord.0 ) {
+				live_neighbor+=1;
+			}
+			// o--
+			// -X-
+			// ---
+			if (this_coord.1  == all_coord.1 - 1 && this_coord.0 == all_coord.0 + 1) {
+				live_neighbor+=1;
+			}
+			// -o-
+			// -X-
+			// ---
+			if (this_coord.1  == all_coord.1 && this_coord.0 == all_coord.0 + 1) {
+				live_neighbor+=1;
+			}
+			// --o
+			// -X-
+			// ---
+			if (this_coord.1  == all_coord.1 + 1 && this_coord.0 == all_coord.0 + 1) {
+				live_neighbor+=1;
+			}
+			// ---
+			// -Xo
+			// ---
+			if (this_coord.1  == all_coord.1 + 1 && this_coord.0 == all_coord.0) {
+				live_neighbor+=1;
+			}
+			// ---
+			// -X-
+			// --o
+			if (this_coord.1  == all_coord.1 + 1 && this_coord.0 == all_coord.0 - 1) {
+				live_neighbor+=1;
+			}
+			// ---
+			// -X-
+			// -o-
+			if (this_coord.1  == all_coord.1 && this_coord.0 == all_coord.0 - 1) {
+				live_neighbor+=1;
+			}
+			// ---
+			// -X-
+			// o--
+			if (this_coord.1  == all_coord.1 - 1 && this_coord.0 == all_coord.0 - 1) {
+				live_neighbor+=1;
+			}
+		}
+		// Live cells fewer than 2 neighbors die
+		// if live_neighbor < 2 {
+
+		// }
+		// Live cells with 2 or 3 neighbors live
+		if live_neighbor == 2 || live_neighbor == 3 {
+			next_coordinate_stack.push((this_coord.0, this_coord.1));
+		}
+		// Live cells with > 3 neighbors die
+		// if live_neighbor == 2 || live_neighbor == 3 {
+		// 	next_coordinate_stack.push((this_coord.1, this_coord.0));
+		// }
+		// Dead cells with exactly 3 neighbors become live
+	}
+	return next_coordinate_stack
 }
 
 fn main() {
     let original = enable_raw_mode();
-    print!("\x1B[?25l"); // hide cursor
-
     let (terminal_cols, terminal_rows) =
         terminal_size().expect("Could not get terminal size");
-
     let x = terminal_cols / 2;
     let y = terminal_rows / 2;
-
+    let mut coordinate_stack: Vec<(u16, u16)> = vec![(x,y), (x+1,y), (x-1,y)];
+    initial_runtime();
     loop {
         clear_screen();
-        draw_block(x, y);
+	draw_block(&coordinate_stack);
+	coordinate_stack = check_neighbors(&coordinate_stack);
         io::stdout().flush().unwrap();
-        thread::sleep(time::Duration::from_millis(50));
+        thread::sleep(time::Duration::from_millis(1000));
     }
 
     #[allow(unreachable_code)]
